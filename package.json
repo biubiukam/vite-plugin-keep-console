@@ -1,6 +1,6 @@
 {
 	"name": "vite-plugin-keep-console",
-	"version": "0.0.10",
+	"version": "1.0.0",
 	"description": "A Vite plugin that allows you to keep specific console statements in production builds while removing others",
 	"keywords": [
 		"vite",
