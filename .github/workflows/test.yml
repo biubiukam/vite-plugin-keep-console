@@ -1,0 +1,37 @@
+name: Test
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Install dependency packages
+      - name: Install dependencies
+        run: npm install
+
+      # Run unit tests and generate coverage reports
+      - name: Run unit tests
+        run: npm run test:coverage
+
+      # Upload coverage report to Codecov
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage
+          fail_ci_if_error: true
+          flags: unittests
+          verbose: true

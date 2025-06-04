@@ -1,0 +1,97 @@
+name: Npm publish
+
+on:
+  push:
+    tags:
+      - "*"
+
+  workflow_dispatch:
+
+# Set workflow permissions
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          # Fetch complete git history including all branches
+          fetch-depth: 0
+          # Use token to enable pushing to protected branches
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Extract tag version number
+      - name: Extract tag version
+        id: get_version
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          # Remove v prefix (if present)
+          VERSION=${TAG_NAME#v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+          echo "Extracted version: $VERSION from tag: $TAG_NAME"
+
+      # Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # Run unit tests
+      - name: Run unit tests
+        run: npm run test
+
+      # Build project
+      - name: build dist and bundle analyzer report
+        run: npm run build
+        env:
+          ANALYZER: 1
+          NODE_OPTIONS: "--max_old_space_size=4096"
+
+      # Configure git user information
+      - name: Configure Git
+        run: |
+          git config --local user.email "biukam.w@gmail.com"
+          git config --local user.name "biubiukam"
+
+      # Commit and push package.json version update to default branch
+      - name: Commit and push version update to main branch
+        run: |
+          # Switch to default branch (usually main or master)
+          DEFAULT_BRANCH=$(git remote show origin | grep 'HEAD branch' | cut -d' ' -f5)
+          echo "Default branch: $DEFAULT_BRANCH"
+          git checkout $DEFAULT_BRANCH
+          git pull origin $DEFAULT_BRANCH
+
+          # Check current version
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "Current version in package.json: $CURRENT_VERSION"
+          echo "Target version: ${{ steps.get_version.outputs.version }}"
+
+          # Only update if version is different
+          if [ "$CURRENT_VERSION" != "${{ steps.get_version.outputs.version }}" ]; then
+            # Update package.json version
+            npm version ${{ steps.get_version.outputs.version }} --no-git-tag-version
+            echo "Updated package.json version to ${{ steps.get_version.outputs.version }}"
+            
+            # Commit changes
+            git add package.json
+            git commit -m "chore: update version to ${{ steps.get_version.outputs.version }} [skip ci]"
+            
+            # Push to default branch
+            git push origin $DEFAULT_BRANCH
+            echo "Version update pushed to $DEFAULT_BRANCH"
+          else
+            echo "Version is already up to date, skipping update"
+          fi
+
+      # Publish to npm
+      - name: Publish to npm
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > .npmrc
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
