@@ -1,5 +1,10 @@
 # vite-plugin-keep-console
 
+<div align="left">
+  <a href="./README.md"><img alt="README in English" src="https://img.shields.io/badge/English-f9f9f9"></a>
+  <a href="./README.zh-CN.md"><img alt="简体中文版自述文件" src="https://img.shields.io/badge/简体中文-f9f9f9"></a>
+</div>
+
 [![license][license-badge]][license-link]
 ![NPM Version](https://img.shields.io/npm/v/vite-plugin-keep-console)
 [![codecov][codecov-badge]][codecov-link]
