@@ -75,7 +75,7 @@ jobs:
 
             - name: Upload coverage to Codecov
               if: github.event_name != 'pull_request' && matrix.node-version == 22
-              uses: codecov/codecov-action@v4
+              uses: codecov/codecov-action@v7
               with:
                   token: ${{ secrets.CODECOV_TOKEN }}
                   files: ./coverage/lcov.info
