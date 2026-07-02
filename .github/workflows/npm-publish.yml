@@ -1,0 +1,132 @@
+name: Publish package
+
+on:
+    push:
+        tags:
+            - "[0-9]*.[0-9]*.[0-9]*"
+            - "v[0-9]*.[0-9]*.[0-9]*"
+    workflow_dispatch:
+        inputs:
+            version:
+                description: "Version to publish (semver, e.g. 1.1.0)"
+                required: true
+                type: string
+
+permissions:
+    contents: write
+    id-token: write
+
+jobs:
+    publish:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: Extract version
+              id: version
+              run: |
+                  if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+                    VERSION="${{ inputs.version }}"
+                    TAG="v$VERSION"
+                  else
+                    TAG="${GITHUB_REF#refs/tags/}"
+                    VERSION="${TAG#v}"
+                  fi
+
+                  if [ "$VERSION" != "${VERSION#*-}" ]; then
+                    NPM_TAG="${VERSION#*-}"
+                    NPM_TAG="${NPM_TAG%%.*}"
+                    RELEASE_FLAG="--prerelease"
+                  else
+                    NPM_TAG="latest"
+                    RELEASE_FLAG=""
+                  fi
+
+                  echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+                  echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+                  echo "npm_tag=$NPM_TAG" >> "$GITHUB_OUTPUT"
+                  echo "release_flag=$RELEASE_FLAG" >> "$GITHUB_OUTPUT"
+
+            - name: Validate semver format
+              run: |
+                  VERSION="${{ steps.version.outputs.version }}"
+                  if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?(\+[a-zA-Z0-9.]+)?$'; then
+                    echo "::error::Invalid semver: $VERSION"
+                    exit 1
+                  fi
+
+            - name: Enable Corepack
+              run: corepack enable
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  cache: pnpm
+                  registry-url: https://registry.npmjs.org
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Lint
+              run: pnpm run lint
+
+            - name: Check formatting
+              run: pnpm run format:check
+
+            - name: Type check
+              run: pnpm run typecheck
+
+            - name: Run tests
+              run: pnpm run test
+
+            - name: Sync package version
+              run: npm pkg set version="${{ steps.version.outputs.version }}"
+
+            - name: Build package
+              run: pnpm run build
+
+            - name: Validate package contents
+              run: npm pack --dry-run
+
+            - name: Publish to npm
+              run: npm publish --provenance --tag "${{ steps.version.outputs.npm_tag }}"
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+            - name: Create GitHub Release
+              env:
+                  GH_TOKEN: ${{ github.token }}
+              run: |
+                  VERSION="${{ steps.version.outputs.version }}"
+                  TAG="${{ steps.version.outputs.tag }}"
+                  RELEASE_FLAG="${{ steps.version.outputs.release_flag }}"
+                  if [ -n "$RELEASE_FLAG" ]; then
+                    gh release create "$TAG" \
+                      --title "v$VERSION" \
+                      --generate-notes \
+                      "$RELEASE_FLAG"
+                  else
+                    gh release create "$TAG" \
+                      --title "v$VERSION" \
+                      --generate-notes
+                  fi
+
+            - name: Commit version update back to default branch
+              run: |
+                  VERSION="${{ steps.version.outputs.version }}"
+                  git config --global user.name "github-actions[bot]"
+                  git config --global user.email "github-actions[bot]@users.noreply.github.com"
+                  DEFAULT_BRANCH=$(git remote show origin | awk '/HEAD branch/ {print $NF}')
+                  git fetch origin "$DEFAULT_BRANCH"
+                  git worktree add ../release-branch "origin/$DEFAULT_BRANCH"
+                  cd ../release-branch
+                  npm pkg set version="$VERSION"
+                  git add package.json
+                  git diff --cached --quiet && exit 0
+                  git commit -m "chore: release v$VERSION"
+                  git push origin "HEAD:$DEFAULT_BRANCH"

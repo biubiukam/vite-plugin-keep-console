@@ -1,12 +1,12 @@
-import { describe, it, expect } from "vitest";
-import { generateTransform } from "../src/transform";
+import { describe, it, expect } from "vitest"
+import { generateTransform } from "../src/transform"
 
 describe("File Types Tests", () => {
-  const transform = generateTransform();
+	const transform = generateTransform()
 
-  describe("JavaScript (.js)", () => {
-    it("should handle different console methods with comment styles", () => {
-      const jsCode = `
+	describe("JavaScript (.js)", () => {
+		it("should handle different console methods with comment styles", async () => {
+			const jsCode = `
         // Regular JS file with multiple console methods
         
         /* keep-console */
@@ -26,31 +26,23 @@ describe("File Types Tests", () => {
             console.trace(/** keep-console */ "This trace should be kept");
           }
         };
-      `;
+      `
 
-      const result = transform(jsCode, "example.js");
-      expect(result.code).toContain('console.log("This log should be kept")');
-      expect(result.code).toContain(
-        'console.error("This error should be kept")'
-      );
-      expect(result.code).toContain("console.trace");
-      expect(result.code).toContain("This trace should be kept");
+			const result = await transform(jsCode, "example.js")
+			expect(result.code).toContain('console.log("This log should be kept")')
+			expect(result.code).toContain('console.error("This error should be kept")')
+			expect(result.code).toContain("console.trace")
+			expect(result.code).toContain("This trace should be kept")
 
-      expect(result.code).not.toContain(
-        'console.warn("This warning should be removed")'
-      );
-      expect(result.code).not.toContain(
-        'console.info("This info should be removed")'
-      );
-      expect(result.code).not.toContain(
-        'console.debug("This debug should be removed")'
-      );
-    });
-  });
+			expect(result.code).not.toContain('console.warn("This warning should be removed")')
+			expect(result.code).not.toContain('console.info("This info should be removed")')
+			expect(result.code).not.toContain('console.debug("This debug should be removed")')
+		})
+	})
 
-  describe("TypeScript (.ts)", () => {
-    it("should handle TypeScript syntax with different console methods", () => {
-      const tsCode = `
+	describe("TypeScript (.ts)", () => {
+		it("should handle TypeScript syntax with different console methods", async () => {
+			const tsCode = `
         // TypeScript specific code
         interface Logger {
           log(message: string): void;
@@ -81,21 +73,21 @@ describe("File Types Tests", () => {
           /** keep-console */
           console.count<string>("test");
         }
-      `;
+      `
 
-      const result = transform(tsCode, "example.ts");
-      expect(result.code).toContain("console.log(message)");
-      expect(result.code).toContain("console.error(message)");
-      expect(result.code).toContain('console.count<string>("test")');
+			const result = await transform(tsCode, "example.ts")
+			expect(result.code).toContain("console.log(message)")
+			expect(result.code).toContain("console.error(message)")
+			expect(result.code).toContain('console.count<string>("test")')
 
-      expect(result.code).not.toContain("console.warn(message)");
-      expect(result.code).not.toContain("console.debug(message)");
-    });
-  });
+			expect(result.code).not.toContain("console.warn(message)")
+			expect(result.code).not.toContain("console.debug(message)")
+		})
+	})
 
-  describe("JSX (.jsx)", () => {
-    it("should handle JSX syntax with different console methods", () => {
-      const jsxCode = `
+	describe("JSX (.jsx)", () => {
+		it("should handle JSX syntax with different console methods", async () => {
+			const jsxCode = `
         import React, { useEffect } from 'react';
         
         function Component() {
@@ -126,26 +118,22 @@ describe("File Types Tests", () => {
             </div>
           );
         }
-      `;
+      `
 
-      const result = transform(jsxCode, "component.jsx");
-      expect(result.code).toContain('console.log("Component mounted")');
-      expect(result.code).toContain('console.warn("Button clicked")');
-      expect(result.code).toContain('console.trace("This will be kept")');
+			const result = await transform(jsxCode, "component.jsx")
+			expect(result.code).toContain('console.log("Component mounted")')
+			expect(result.code).toContain('console.warn("Button clicked")')
+			expect(result.code).toContain('console.trace("This will be kept")')
 
-      expect(result.code).not.toContain('console.info("This will be removed")');
-      expect(result.code).not.toContain(
-        'console.error("This will be removed")'
-      );
-      expect(result.code).not.toContain(
-        'console.debug("This will be removed")'
-      );
-    });
-  });
+			expect(result.code).not.toContain('console.info("This will be removed")')
+			expect(result.code).not.toContain('console.error("This will be removed")')
+			expect(result.code).not.toContain('console.debug("This will be removed")')
+		})
+	})
 
-  describe("TypeScript JSX (.tsx)", () => {
-    it("should handle TSX syntax with different console methods", () => {
-      const tsxCode = `
+	describe("TypeScript JSX (.tsx)", () => {
+		it("should handle TSX syntax with different console methods", async () => {
+			const tsxCode = `
         import React, { FC, useEffect, useState } from 'react';
         
         interface Props {
@@ -182,31 +170,48 @@ describe("File Types Tests", () => {
             </div>
           );
         };
-      `;
+      `
 
-      const result = transform(tsxCode, "component.tsx");
-      expect(result.code).toContain("console.log(`Hello ${name}`)");
-      expect(result.code).toContain(
-        "console.debug(`Count increased: ${prev + 1}`)"
-      );
-      expect(result.code).toContain("console.table");
-      expect(result.code).toContain("name");
-      expect(result.code).toContain("count");
+			const result = await transform(tsxCode, "component.tsx")
+			expect(result.code).toContain("console.log(`Hello ${name}`)")
+			expect(result.code).toContain("console.debug(`Count increased: ${prev + 1}`)")
+			expect(result.code).toContain("console.table")
+			expect(result.code).toContain("name")
+			expect(result.code).toContain("count")
 
-      expect(result.code).not.toContain('console.info("This will be removed")');
-      expect(result.code).not.toContain(
-        'console.error("This will be removed")'
-      );
-      expect(result.code).not.toContain(
-        'console.trace("This will be removed")'
-      );
-    });
-  });
+			expect(result.code).not.toContain('console.info("This will be removed")')
+			expect(result.code).not.toContain('console.error("This will be removed")')
+			expect(result.code).not.toContain('console.trace("This will be removed")')
+		})
+	})
 
-  describe("Vue (.vue)", () => {
-    it("should handle Vue syntax with different console methods", () => {
-      // Using plain JavaScript instead of actual Vue template to avoid parsing issues in tests
-      const vueCode = `
+	describe("Vue (.vue)", () => {
+		it("should transform real Vue SFC script blocks without parsing the template", async () => {
+			const vueCode = `
+<template>
+  <button @click="console.log('template expression stays untouched')">
+    Save
+  </button>
+</template>
+
+<script setup lang="ts">
+// keep-console
+console.info("keep from setup");
+console.warn("remove from setup");
+</script>`
+
+			const result = await transform(vueCode, "component.vue")
+
+			expect(result.code).toContain("template expression stays untouched")
+			expect(result.code).toContain('console.info("keep from setup")')
+			expect(result.code).not.toContain('console.warn("remove from setup")')
+			expect(result.code).toContain("<template>")
+			expect(result.code).toContain('<script setup lang="ts">')
+		})
+
+		it("should handle Vue syntax with different console methods", async () => {
+			// Using plain JavaScript instead of actual Vue template to avoid parsing issues in tests
+			const vueCode = `
 // This is a simplified representation of a Vue component for testing purposes
 // In a real Vue file, this would be wrapped in a <script> tag
 export default {
@@ -222,21 +227,42 @@ export default {
       console.info("This will be removed");
     }
   }
-}`;
+}`
 
-      const result = transform(vueCode, "component.vue");
-      expect(result.code).toContain('console.log("Component mounted")');
-      expect(result.code).toContain('console.error("Button clicked")');
+			const result = await transform(vueCode, "component.vue")
+			expect(result.code).toContain('console.log("Component mounted")')
+			expect(result.code).toContain('console.error("Button clicked")')
 
-      expect(result.code).not.toContain('console.warn("This will be removed")');
-      expect(result.code).not.toContain('console.info("This will be removed")');
-    });
-  });
+			expect(result.code).not.toContain('console.warn("This will be removed")')
+			expect(result.code).not.toContain('console.info("This will be removed")')
+		})
+	})
 
-  describe("Svelte (.svelte)", () => {
-    it("should handle Svelte syntax with different console methods", () => {
-      // Using plain JavaScript instead of actual Svelte template to avoid parsing issues in tests
-      const svelteCode = `
+	describe("Svelte (.svelte)", () => {
+		it("should transform real Svelte script blocks without parsing markup", async () => {
+			const svelteCode = `
+<script lang="ts">
+  // keep-console
+  console.log("keep from script");
+  console.error("remove from script");
+</script>
+
+<button on:click={() => console.warn("template handler stays untouched")}>
+  Save
+</button>`
+
+			const result = await transform(svelteCode, "component.svelte")
+
+			expect(result.code).toContain("template handler stays untouched")
+			expect(result.code).toContain('console.log("keep from script")')
+			expect(result.code).not.toContain('console.error("remove from script")')
+			expect(result.code).toContain('<script lang="ts">')
+			expect(result.code).toContain("<button")
+		})
+
+		it("should handle Svelte syntax with different console methods", async () => {
+			// Using plain JavaScript instead of actual Svelte template to avoid parsing issues in tests
+			const svelteCode = `
 // This is a simplified representation of a Svelte component for testing purposes
 // In a real Svelte file, this would be wrapped in a <script> tag
 import { onMount } from 'svelte';
@@ -254,16 +280,14 @@ onMount(() => {
   // keep-console
   console.info("Component mounted");
   console.error("This will be removed");
-});`;
+});`
 
-      const result = transform(svelteCode, "component.svelte");
-      expect(result.code).toContain("console.log(`Count: ${count}`)");
-      expect(result.code).toContain('console.info("Component mounted")');
+			const result = await transform(svelteCode, "component.svelte")
+			expect(result.code).toContain("console.log(`Count: ${count}`)")
+			expect(result.code).toContain('console.info("Component mounted")')
 
-      expect(result.code).not.toContain('console.warn("This will be removed")');
-      expect(result.code).not.toContain(
-        'console.error("This will be removed")'
-      );
-    });
-  });
-});
+			expect(result.code).not.toContain('console.warn("This will be removed")')
+			expect(result.code).not.toContain('console.error("This will be removed")')
+		})
+	})
+})
