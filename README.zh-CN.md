@@ -38,12 +38,12 @@ import { defineConfig } from "vite"
 import ConsoleKeeper from "vite-plugin-keep-console"
 
 export default defineConfig({
-	plugins: [
-		ConsoleKeeper({
-			// 配置选项
-			backend: "auto"
-		})
-	]
+  plugins: [
+    ConsoleKeeper({
+      // 配置选项
+      backend: "auto"
+    })
+  ]
 })
 ```
 
@@ -91,9 +91,9 @@ import { defineConfig } from "vite"
 import ConsoleKeeper from "vite-plugin-keep-console"
 
 export default defineConfig({
-	plugins: [
-		ConsoleKeeper() // 将移除所有 console 语句，除了标记有 "keep-console" 注释的语句
-	]
+  plugins: [
+    ConsoleKeeper() // 将移除所有 console 语句，除了标记有 "keep-console" 注释的语句
+  ]
 })
 ```
 
@@ -104,12 +104,12 @@ import { defineConfig } from "vite"
 import ConsoleKeeper from "vite-plugin-keep-console"
 
 export default defineConfig({
-	plugins: [
-		ConsoleKeeper({
-			backend: "babel", // 强制使用旧版 Babel 后端
-			methods: ["log", "error", "warn"] // 只处理 console.log、console.error 和 console.warn
-		})
-	]
+  plugins: [
+    ConsoleKeeper({
+      backend: "babel", // 强制使用旧版 Babel 后端
+      methods: ["log", "error", "warn"] // 只处理 console.log、console.error 和 console.warn
+    })
+  ]
 })
 ```
 
@@ -120,12 +120,12 @@ import { defineConfig } from "vite"
 import ConsoleKeeper from "vite-plugin-keep-console"
 
 export default defineConfig({
-	plugins: [
-		ConsoleKeeper({
-			include: ["src", /\.tsx?$/],
-			exclude: ["src/vendor"] // 处理 src 文件，但排除 vendor 代码
-		})
-	]
+  plugins: [
+    ConsoleKeeper({
+      include: ["src", /\.tsx?$/],
+      exclude: ["src/vendor"] // 处理 src 文件，但排除 vendor 代码
+    })
+  ]
 })
 ```
 
@@ -136,13 +136,13 @@ import { defineConfig } from "vite"
 import ConsoleKeeper from "vite-plugin-keep-console"
 
 export default defineConfig({
-	plugins: [
-		ConsoleKeeper({
-			mode: "report",
-			report: "detailed",
-			failOnConsole: true
-		})
-	]
+  plugins: [
+    ConsoleKeeper({
+      mode: "report",
+      report: "detailed",
+      failOnConsole: true
+    })
+  ]
 })
 ```
 
@@ -152,7 +152,7 @@ export default defineConfig({
 
 ```js
 ConsoleKeeper({
-	preserveArguments: true
+  preserveArguments: true
 })
 ```
 
@@ -165,11 +165,11 @@ import { defineConfig } from "vite"
 import ConsoleKeeper from "vite-plugin-keep-console"
 
 export default defineConfig({
-	plugins: [
-		ConsoleKeeper({
-			keepComments: ["KEEP", "IMPORTANT", "DEBUG"]
-		})
-	]
+  plugins: [
+    ConsoleKeeper({
+      keepComments: ["KEEP", "IMPORTANT", "DEBUG"]
+    })
+  ]
 })
 ```
 
@@ -212,8 +212,8 @@ console.log("保留") // keep-console - 在语句之后
 console.log(/* keep-console */ "保留") // 在调用内部
 
 console.log(
-	// keep-console - 在参数之前
-	"保留"
+  // keep-console - 在参数之前
+  "保留"
 )
 ```
 

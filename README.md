@@ -53,12 +53,12 @@ import { defineConfig } from "vite"
 import ConsoleKeeper from "vite-plugin-keep-console"
 
 export default defineConfig({
-	plugins: [
-		ConsoleKeeper({
-			// options
-			backend: "auto"
-		})
-	]
+  plugins: [
+    ConsoleKeeper({
+      // options
+      backend: "auto"
+    })
+  ]
 })
 ```
 
@@ -106,9 +106,9 @@ import { defineConfig } from "vite"
 import ConsoleKeeper from "vite-plugin-keep-console"
 
 export default defineConfig({
-	plugins: [
-		ConsoleKeeper() // Will remove all console statements except those marked with "keep-console" comment
-	]
+  plugins: [
+    ConsoleKeeper() // Will remove all console statements except those marked with "keep-console" comment
+  ]
 })
 ```
 
@@ -119,12 +119,12 @@ import { defineConfig } from "vite"
 import ConsoleKeeper from "vite-plugin-keep-console"
 
 export default defineConfig({
-	plugins: [
-		ConsoleKeeper({
-			backend: "babel", // Force the legacy Babel backend
-			methods: ["log", "error", "warn"] // Only process console.log, console.error, and console.warn
-		})
-	]
+  plugins: [
+    ConsoleKeeper({
+      backend: "babel", // Force the legacy Babel backend
+      methods: ["log", "error", "warn"] // Only process console.log, console.error, and console.warn
+    })
+  ]
 })
 ```
 
@@ -135,12 +135,12 @@ import { defineConfig } from "vite"
 import ConsoleKeeper from "vite-plugin-keep-console"
 
 export default defineConfig({
-	plugins: [
-		ConsoleKeeper({
-			include: ["src", /\.tsx?$/],
-			exclude: ["src/vendor"] // Process src files except vendor code
-		})
-	]
+  plugins: [
+    ConsoleKeeper({
+      include: ["src", /\.tsx?$/],
+      exclude: ["src/vendor"] // Process src files except vendor code
+    })
+  ]
 })
 ```
 
@@ -151,13 +151,13 @@ import { defineConfig } from "vite"
 import ConsoleKeeper from "vite-plugin-keep-console"
 
 export default defineConfig({
-	plugins: [
-		ConsoleKeeper({
-			mode: "report",
-			report: "detailed",
-			failOnConsole: true
-		})
-	]
+  plugins: [
+    ConsoleKeeper({
+      mode: "report",
+      report: "detailed",
+      failOnConsole: true
+    })
+  ]
 })
 ```
 
@@ -167,7 +167,7 @@ export default defineConfig({
 
 ```js
 ConsoleKeeper({
-	preserveArguments: true
+  preserveArguments: true
 })
 ```
 
@@ -180,11 +180,11 @@ import { defineConfig } from "vite"
 import ConsoleKeeper from "vite-plugin-keep-console"
 
 export default defineConfig({
-	plugins: [
-		ConsoleKeeper({
-			keepComments: ["KEEP", "IMPORTANT", "DEBUG"]
-		})
-	]
+  plugins: [
+    ConsoleKeeper({
+      keepComments: ["KEEP", "IMPORTANT", "DEBUG"]
+    })
+  ]
 })
 ```
 
@@ -227,8 +227,8 @@ console.log("kept") // keep-console - after statement
 console.log(/* keep-console */ "kept") // inside call
 
 console.log(
-	// keep-console - before parameter
-	"kept"
+  // keep-console - before parameter
+  "kept"
 )
 ```
 

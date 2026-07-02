@@ -10,5 +10,14 @@
 	"bracketSameLine": false,
 	"arrowParens": "always",
 	"endOfLine": "lf",
-	"singleAttributePerLine": false
+	"singleAttributePerLine": false,
+	"overrides": [
+		{
+			"files": "README*.md",
+			"options": {
+				"tabWidth": 2,
+				"useTabs": false
+			}
+		}
+	]
 }
