@@ -4,11 +4,11 @@
 
 ## Verification
 
-- [ ] `npm run typecheck`
-- [ ] `npm run lint`
-- [ ] `npm run format:check`
-- [ ] `npm run test`
-- [ ] `npm run build`
+- [ ] `pnpm run typecheck`
+- [ ] `pnpm run lint`
+- [ ] `pnpm run format:check`
+- [ ] `pnpm run test`
+- [ ] `pnpm run build`
 - [ ] `npm pack --dry-run`
 
 ## Checklist

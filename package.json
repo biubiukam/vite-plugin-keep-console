@@ -2,14 +2,22 @@
 	"name": "vite-plugin-keep-console",
 	"version": "1.0.0",
 	"packageManager": "pnpm@10.11.0",
-	"description": "A Vite plugin that allows you to keep specific console statements in production builds while removing others",
+	"description": "Production console policy for Vite: remove, keep, report, or fail builds on console calls with Babel/OXC backends.",
 	"keywords": [
 		"vite",
 		"vite-plugin",
 		"console",
+		"console-policy",
+		"remove-console",
+		"strip-console",
+		"build-tool",
 		"production",
-		"debug",
-		"logging"
+		"typescript",
+		"javascript",
+		"babel",
+		"oxc",
+		"logging",
+		"ci"
 	],
 	"homepage": "https://github.com/biubiukam/vite-plugin-keep-console",
 	"bugs": {
