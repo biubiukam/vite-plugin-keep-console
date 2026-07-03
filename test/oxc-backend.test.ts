@@ -84,12 +84,40 @@ const consoleCall = (
 	}
 }
 
-const expressionStatement = (code: string, expression: OxcNode): OxcNode => ({
-	type: "ExpressionStatement",
-	start: expression.start,
-	end: code.indexOf(";", expression.start) + 1,
-	expression
-})
+const expressionStatement = (code: string, expression: OxcNode): OxcNode => {
+	const semicolonIndex = code.indexOf(";", expression.start)
+
+	return {
+		type: "ExpressionStatement",
+		start: expression.start,
+		end: semicolonIndex === -1 ? expression.end : semicolonIndex + 1,
+		expression
+	}
+}
+
+const ifStatement = (code: string, testSource: string, consequent: OxcNode): OxcNode => {
+	const start = code.indexOf("if")
+	const testStart = code.indexOf(testSource)
+
+	return {
+		type: "IfStatement",
+		start,
+		end: getNodeEnd(consequent),
+		test: {
+			type: "MemberExpression",
+			start: testStart,
+			end: testStart + testSource.length,
+			object: identifier(testSource.split(".")[0]),
+			property: identifier(testSource.split(".")[1])
+		},
+		consequent
+	}
+}
+
+const getNodeEnd = (node: OxcNode) => {
+	if (typeof node.end !== "number") throw new Error("Test node is missing end")
+	return node.end
+}
 
 describe("oxc backend", () => {
 	it.each([
@@ -268,6 +296,62 @@ describe("oxc backend", () => {
 		})
 
 		expect(result.code).toBe("expensive(), value, undefined;")
+	})
+
+	it("removes console-only single-line if consequents without leaving invalid syntax", () => {
+		const code = 'if (err.message) console.error("form validate error", err);'
+		const call = consoleCall(code, 'console.error("form validate error", err)', "error", {
+			arguments: [
+				literal("form validate error"),
+				{
+					type: "Identifier",
+					name: "err",
+					start: code.lastIndexOf("err"),
+					end: code.lastIndexOf("err") + "err".length
+				}
+			]
+		})
+		const consequent = expressionStatement(code, call)
+
+		const result = runOxc(code, program(code, [ifStatement(code, "err.message", consequent)]))
+
+		expect(result.code).not.toContain("console.error")
+		expect(result.code).toContain("{}")
+	})
+
+	it("ignores object pattern aliases when OXC does not provide properties", () => {
+		const code = "const {} = console;"
+
+		const result = runOxc(
+			code,
+			program(code, [
+				{
+					type: "VariableDeclaration",
+					start: 0,
+					end: code.length,
+					declarations: [
+						{
+							type: "VariableDeclarator",
+							start: code.indexOf("{"),
+							end: code.length - 1,
+							id: {
+								type: "ObjectPattern",
+								start: code.indexOf("{"),
+								end: code.indexOf("}") + 1
+							},
+							init: {
+								type: "Identifier",
+								name: "console",
+								start: code.indexOf("console"),
+								end: code.indexOf("console") + "console".length
+							}
+						}
+					]
+				}
+			])
+		)
+
+		expect(result.code).toBe(code)
 	})
 
 	it("keeps code unchanged and records skipped events in report mode", () => {
@@ -472,6 +556,15 @@ describe("oxc backend", () => {
 				}
 			])
 		)
+
+		expect(result.code).toBe("")
+	})
+
+	it("removes expression statements even when the AST root has no statement parent", () => {
+		const code = 'console.log("root");'
+		const call = consoleCall(code, 'console.log("root")', "log")
+
+		const result = runOxc(code, expressionStatement(code, call))
 
 		expect(result.code).toBe("")
 	})

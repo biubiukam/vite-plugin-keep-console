@@ -1,7 +1,12 @@
 import { describe, it, expect } from "vitest"
+import { parse } from "@babel/parser"
+import * as oxcParser from "oxc-parser"
 import { generateTransform } from "../src/transform"
+import type { ConsoleKeeperOptions } from "../src/types"
 
 describe("transform.ts", () => {
+	const backends = ["babel", "oxc"] as const
+
 	const consoleMethods = [
 		"log",
 		"warn",
@@ -32,6 +37,21 @@ describe("transform.ts", () => {
 	}
 
 	const transform = generateTransform()
+
+	const createTransform = (options?: ConsoleKeeperOptions) =>
+		generateTransform(options, {
+			nodeVersion: "22.12.0",
+			loadOxcParser: async () => oxcParser
+		})
+
+	const expectParsableTsx = (code: string) => {
+		expect(() =>
+			parse(code, {
+				sourceType: "module",
+				plugins: ["typescript", "jsx"]
+			})
+		).not.toThrow()
+	}
 
 	it("should handle all console methods with different comment styles", async () => {
 		for (const method of consoleMethods) {
@@ -116,6 +136,154 @@ describe("transform.ts", () => {
 		const spreadResult = await transform("console.log(...items);", "test.js")
 		expect(spreadResult.code).toContain("items, undefined")
 	})
+
+	it("removes console-only single-line if consequents without leaving invalid syntax", async () => {
+		const transform = generateTransform({
+			backend: "babel"
+		})
+		const result = await transform(
+			[
+				"async function submit(err: any) {",
+				"  try {",
+				"  } catch (err: any) {",
+				"    if (err.message) console.error(err.message)",
+				"  }",
+				"}"
+			].join("\n"),
+			"test.tsx"
+		)
+
+		expect(result.code).not.toContain("console.error")
+		expect(result.code).toContain("if (err.message) {}")
+		expectParsableTsx(result.code)
+	})
+
+	it.each(backends)(
+		"removes direct console calls from common syntax positions with the %s backend",
+		async (backend) => {
+			const transform = createTransform({ backend })
+			const result = await transform(
+				[
+					"function render(flag: boolean, items: string[]) {",
+					'  console.log("statement")',
+					'  const assigned = console.warn("initializer")',
+					'  const ternary = flag ? console.error("ternary") : "fallback"',
+					'  const logical = flag && console.info("logical")',
+					'  const sequence = (console.debug("sequence"), flag)',
+					'  if (flag) console.count("if-body")',
+					"  for (const item of items) console.timeEnd(item)",
+					'  while (flag) console.trace("while-body")',
+					"  const view = <button onClick={() => console.dir(items)}>Run</button>",
+					"  return { assigned, ternary, logical, sequence, view }",
+					"}"
+				].join("\n"),
+				"test.tsx"
+			)
+
+			expect(result.code).not.toContain("console.")
+			expect(result.code).toContain("if (flag) {}")
+			expect(result.code).toContain("for (const item of items) {}")
+			expect(result.code).toContain("while (flag) {}")
+			expectParsableTsx(result.code)
+		}
+	)
+
+	it.each(backends)(
+		"removes console calls through object, method, and destructured aliases with the %s backend",
+		async (backend) => {
+			const transform = createTransform({ backend })
+			const result = await transform(
+				[
+					"function demo(flag: boolean, data: unknown) {",
+					"  const logger = console",
+					"  const log = console.log",
+					"  const warnAlias = console.warn",
+					'  const methodName = "error"',
+					'  const { error, info: infoAlias, "trace": traceAlias, 1: numericAlias } = console',
+					"  const { [methodName]: computedAlias, error: defaultedAlias = plainLogger, ...restConsole } = console",
+					"  let assignedLog",
+					"  let assignedLogger",
+					"  let reassignedLog",
+					"  let destructuredAssignment",
+					"  assignedLog = console.log",
+					"  assignedLogger = console",
+					"  reassignedLog = console.log",
+					"  reassignedLog = plainLogger",
+					"  ;({ log: destructuredAssignment } = console)",
+					'  logger.debug("object alias")',
+					'  log("method alias")',
+					'  warnAlias("warn alias")',
+					'  error("destructured alias")',
+					'  infoAlias("renamed alias")',
+					'  traceAlias("string-key alias")',
+					'  numericAlias("keep numeric alias")',
+					'  computedAlias("keep computed object-pattern alias")',
+					'  defaultedAlias("keep defaulted alias")',
+					'  restConsole.error("keep rest alias")',
+					'  assignedLog("assigned method alias")',
+					'  assignedLogger.warn("assigned object alias")',
+					'  reassignedLog("keep reassigned")',
+					'  destructuredAssignment("keep destructured assignment")',
+					"  const tableValue = logger.table(data)",
+					'  const nested = flag ? log("ternary alias") : data',
+					'  if (flag) error("if alias")',
+					'  plainLogger("keep")',
+					"  return { tableValue, nested }",
+					"}"
+				].join("\n"),
+				"test.ts"
+			)
+
+			expect(result.code).not.toContain('logger.debug("object alias")')
+			expect(result.code).not.toContain('log("method alias")')
+			expect(result.code).not.toContain('warnAlias("warn alias")')
+			expect(result.code).not.toContain('error("destructured alias")')
+			expect(result.code).not.toContain('infoAlias("renamed alias")')
+			expect(result.code).not.toContain('traceAlias("string-key alias")')
+			expect(result.code).toContain('numericAlias("keep numeric alias")')
+			expect(result.code).toContain('computedAlias("keep computed object-pattern alias")')
+			expect(result.code).toContain('defaultedAlias("keep defaulted alias")')
+			expect(result.code).toContain('restConsole.error("keep rest alias")')
+			expect(result.code).not.toContain('assignedLog("assigned method alias")')
+			expect(result.code).not.toContain('assignedLogger.warn("assigned object alias")')
+			expect(result.code).toContain('reassignedLog("keep reassigned")')
+			expect(result.code).toContain('destructuredAssignment("keep destructured assignment")')
+			expect(result.code).not.toContain("logger.table(data)")
+			expect(result.code).not.toContain('log("ternary alias")')
+			expect(result.code).not.toContain('error("if alias")')
+			expect(result.code).toContain('plainLogger("keep")')
+			expectParsableTsx(result.code)
+		}
+	)
+
+	it.each(backends)(
+		"honors method filters, keep comments, and preserved arguments for alias calls with the %s backend",
+		async (backend) => {
+			const transform = createTransform({
+				backend,
+				methods: ["error"],
+				preserveArguments: true
+			})
+			const result = await transform(
+				[
+					"function demo(expensive: () => string, value: string) {",
+					"  const log = console.log",
+					"  const error = console.error",
+					'  log("kept by method filter")',
+					"  error(expensive(), value)",
+					'  error(/* keep-console */ "kept by comment")',
+					"}"
+				].join("\n"),
+				"test.ts"
+			)
+
+			expect(result.code).toContain('log("kept by method filter")')
+			expect(result.code).not.toContain("error(expensive(), value)")
+			expect(result.code).toContain("expensive(), value, undefined")
+			expect(result.code).toContain("kept by comment")
+			expectParsableTsx(result.code)
+		}
+	)
 
 	it("keeps code unchanged in report mode while still honoring keep comments", async () => {
 		const transform = generateTransform({
