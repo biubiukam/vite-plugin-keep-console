@@ -1,11 +1,12 @@
 import { describe, it, expect } from "vitest"
 import { parse } from "@babel/parser"
-import * as oxcParser from "oxc-parser"
+import { supportsOxcRuntime } from "../src/backend"
 import { generateTransform } from "../src/transform"
+import type { OxcParserModule } from "../src/backend-types"
 import type { ConsoleKeeperOptions } from "../src/types"
 
 describe("transform.ts", () => {
-	const backends = ["babel", "oxc"] as const
+	const backends = supportsOxcRuntime() ? (["babel", "oxc"] as const) : (["babel"] as const)
 
 	const consoleMethods = [
 		"log",
@@ -40,8 +41,7 @@ describe("transform.ts", () => {
 
 	const createTransform = (options?: ConsoleKeeperOptions) =>
 		generateTransform(options, {
-			nodeVersion: "22.12.0",
-			loadOxcParser: async () => oxcParser
+			loadOxcParser: async () => (await import("oxc-parser")) as OxcParserModule
 		})
 
 	const expectParsableTsx = (code: string) => {
