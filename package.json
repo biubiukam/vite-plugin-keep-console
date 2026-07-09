@@ -56,14 +56,14 @@
 		"test:watch": "vitest"
 	},
 	"dependencies": {
-		"@babel/generator": "^7.27.1",
-		"@babel/parser": "^7.27.2",
-		"@babel/traverse": "^7.27.1",
-		"@babel/types": "^7.27.1",
+		"@babel/generator": "^8.0.0",
+		"@babel/parser": "^8.0.4",
+		"@babel/traverse": "^8.0.4",
+		"@babel/types": "^8.0.4",
 		"magic-string": "^0.30.21"
 	},
 	"optionalDependencies": {
-		"oxc-parser": "^0.137.0"
+		"oxc-parser": "^0.139.0"
 	},
 	"devDependencies": {
 		"@eslint/js": "^9.39.4",
